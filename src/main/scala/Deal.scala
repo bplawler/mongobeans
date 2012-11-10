@@ -20,11 +20,7 @@ trait MongoBean {
         .map { obj => Option(obj.get(fieldName).asInstanceOf[A]) }
         .getOrElse { None }
 
-    def value_=(a: A) = 
-      dbObj.getOrElse { 
-        dbObj = Some(new BasicDBObject)
-        dbObj.get
-      } += (fieldName -> extractValue(a)) 
+    def value_=(a: A) = ensureDbObj += (fieldName -> extractValue(a)) 
       
     protected def extractValue(a: A) = a match {
       case s: StringEnum => a.toString
@@ -60,17 +56,13 @@ trait MongoBean {
           result
         } 
 
-    def assertValue(rule: String, value: A): Unit = 
-      getOrAdd(getOrAdd(ensureDbObj, "assertions"), fieldName) += 
-        (rule -> extractValue(value))
+    def assertValue(rule: String, value: A): Unit = {
+      val assertionContainer = getOrAdd(ensureDbObj, "assertions")
+      val fieldContainer = getOrAdd(assertionContainer, fieldName)
+      fieldContainer += (rule -> extractValue(value))
+    }
 
     def getAssertedValue(rule: String): Option[A] = 
-    /*
-      dbObj
-        .flatMap(obj => Option(obj.get("assertions").asInstanceOf[DBObject]))
-        .flatMap(obj => Option(obj.get(fieldName).asInstanceOf[DBObject]))
-        .flatMap(obj => Option(obj.get(rule).asInstanceOf[A]))
-        */
       for(
         obj <- dbObj; 
         assertionsContainer <- obj.getAs[DBObject]("assertions");
@@ -78,19 +70,33 @@ trait MongoBean {
         ruleValue <- Option(fieldContainer.get(rule).asInstanceOf[A])
       ) yield ruleValue
 
-    def getAssertions: Option[Map[String, A]] = None
+    def getAssertedValues: Option[scala.collection.Map[String, A]] = 
+      for(
+        obj <- dbObj; 
+        assertionsContainer <- obj.getAs[DBObject]("assertions");
+        fieldContainer <- assertionsContainer.getAs[DBObject](fieldName)
+      ) yield fieldContainer.mapValues { _.asInstanceOf[A] }
 
-    def isAsserted: Boolean = false
+    def isAsserted: Boolean = getAssertedValues.isDefined
 
-    def validate(rule: String): Unit = { }
+    def validate(rule: String): Unit = {
+      val validationsContainer = getOrAdd(ensureDbObj, "validations")
+      val value = getAssertedValue(rule);
+      validationsContainer += (fieldName -> rule)
+      ensureDbObj += (fieldName -> value.asInstanceOf[Object])
+    }
+
+    def invalidate: Unit = {
+      val validationsContainer = getOrAdd(ensureDbObj, "validations")
+      validationsContainer -= fieldName
+      ensureDbObj -= fieldName 
+    }
 
     def isValidated: Boolean = value.isDefined
 
-   /**
-    * Value will only return a value if the field has been asserted and
-    * validated by the application.  Otherwise None comes back.
-    */
-    override def value: Option[A] = None
+    override def value_=(v: A) = 
+      throw new RuntimeException("The value of an asserted field may not " +
+        "be set directly.  It must be asserted and validated.")
   }
 
   def save = dbObj.foreach { Config.deals.save(_) }
