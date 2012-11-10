@@ -37,15 +37,15 @@ trait MongoBean {
       }
   }
 
-  class EnumAttribute[A](fieldName: String, converter: (String) => Option[A] )
+  class EnumAttribute[A](fieldName: String, enum: StringEnum[A] )
    extends Attribute[A](fieldName) {
     override def value: Option[A] =
       dbObj
         .flatMap { obj => 
-          obj.getAs[String](fieldName).flatMap(converter(_))
+          obj.getAs[String](fieldName).flatMap(enum(_))
         }
 
-    override def value_=(a: A) = ensureDbObj += (fieldName -> a.toString)
+    override def value_=(a: A) = ensureDbObj += (fieldName -> enum.unapply(a))
   }
 
  /**
@@ -117,27 +117,32 @@ trait MongoBean {
 }
 
 trait StringEnum[A] {
-  var mappings = Map[String, A]()
-  def unapply(s: String): Option[A] = mappings.get(s)
+  private var mappings = Map[String, A]()
+  def apply(s: String): Option[A] = mappings.get(s)
+  def unapply(a: A): String = a.toString
+  def addMapping(i: StringEnumItem) =
+    mappings += (i.toString -> i.asInstanceOf[A])
+}
+
+class StringEnumItem(enum: StringEnum[_]) {
+  enum.addMapping(this);
 }
 
 ////  EVERYTHING FROM HERE DOWN IS "APP"
 
-object Retailer extends StringEnum[Retailer] {
-  case object Walgreens extends Retailer  ; Walgreens
-  case object CVS extends Retailer        ; CVS
-  case object RiteAid extends Retailer    ; RiteAid
-}
+sealed class Retailer extends StringEnumItem(RetailerEnum) 
 
-sealed class Retailer {
-  Retailer.mappings += (this.toString -> this)
+object RetailerEnum extends StringEnum[Retailer] {
+  Walgreens ; case object Walgreens extends Retailer 
+  CVS       ; case object CVS extends Retailer
+  RiteAid   ; case object RiteAid extends Retailer
 }
 
 class Deal extends MongoBean {
   val coll = Config.deals
 
   val source = new Attribute[String]("source")
-  val retailer = new EnumAttribute[Retailer]("retailer", Retailer.unapply)
+  val retailer = new EnumAttribute[Retailer]("retailer", RetailerEnum)
   val number = new Attribute[Long]("number")
   val brands = new Attribute[Set[String]]("brand")
   val zipCodes = new Attribute[Set[String]]("zipCode")
