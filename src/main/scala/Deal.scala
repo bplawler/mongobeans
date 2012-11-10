@@ -141,6 +141,7 @@ object RetailerEnum extends StringEnum[Retailer] {
 class Deal extends MongoBean {
   val coll = Config.deals
 
+  val _id = new Attribute[org.bson.types.ObjectId]("_id")
   val source = new Attribute[String]("source")
   val retailer = new EnumAttribute[Retailer]("retailer", RetailerEnum)
   val number = new Attribute[Long]("number")
