@@ -21,13 +21,24 @@ trait MongoBean {
       dbObj.getOrElse { 
         dbObj = Some(new BasicDBObject)
         dbObj.get
-      } += (fieldName -> a.asInstanceOf[AnyRef]) 
+      } += (fieldName -> { 
+        a match {
+          case s: StringEnum => a.toString
+          case _ => a.asInstanceOf[AnyRef]
+        }
+      })
   }
 
   def save = dbObj.foreach { Config.deals.save(_) }
 }
 
+trait StringEnum 
+sealed class Retailer extends StringEnum
+case object Walgreens extends Retailer
+case object CVS extends Retailer
+case object RiteAid extends Retailer
+
 class Deal extends MongoBean {
   val source = new Attribute[String]("source")
-  val retailer = new Attribute[String]("retailer")
+  val retailer = new Attribute[Retailer]("retailer")
 }
