@@ -8,26 +8,24 @@ object Config {
   val deals = db("deals")
 }
 
-class Deal {
+trait MongoBean {
   private var dbObj: Option[BasicDBObject] = None
 
-  def source: Option[String] = 
-    dbObj.map { _.getAs[String]("source") } getOrElse None
+  class Attribute(val fieldName: String) {
+    def value: Option[String] =
+      dbObj.map { _.getAs[String](fieldName) } getOrElse None
 
-  def source_=(s: String) = 
-    dbObj.getOrElse { 
-      dbObj = Some(new BasicDBObject)
-      dbObj.get
-    } += ("source" -> s) 
-
-  def retailer: Option[String] = 
-    dbObj.map { _.getAs[String]("retailer") } getOrElse None
-
-  def retailer_=(s: String) = 
-    dbObj.getOrElse { 
-      dbObj = Some(new BasicDBObject)
-      dbObj.get
-    } += ("retailer" -> s) 
+    def value_=(s: String) = 
+      dbObj.getOrElse { 
+        dbObj = Some(new BasicDBObject)
+        dbObj.get
+      } += (fieldName -> s) 
+  }
 
   def save = dbObj.foreach { Config.deals.save(_) }
+}
+
+class Deal extends MongoBean {
+  val source = new Attribute("source")
+  val retailer = new Attribute("retailer")
 }
