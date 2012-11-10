@@ -20,5 +20,14 @@ class Deal {
       dbObj.get
     } += ("source" -> s) 
 
+  def retailer: Option[String] = 
+    dbObj.map { _.getAs[String]("retailer") } getOrElse None
+
+  def retailer_=(s: String) = 
+    dbObj.getOrElse { 
+      dbObj = Some(new BasicDBObject)
+      dbObj.get
+    } += ("retailer" -> s) 
+
   def save = dbObj.foreach { Config.deals.save(_) }
 }
