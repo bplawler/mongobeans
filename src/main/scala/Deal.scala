@@ -11,21 +11,23 @@ object Config {
 trait MongoBean {
   private var dbObj: Option[BasicDBObject] = None
 
-  class Attribute(val fieldName: String) {
-    def value: Option[String] =
-      dbObj.map { _.getAs[String](fieldName) } getOrElse None
+  class Attribute[A](val fieldName: String) {
+    def value: Option[A] =
+      dbObj
+        .map { obj => Option(obj.get(fieldName).asInstanceOf[A]) }
+        .getOrElse { None }
 
-    def value_=(s: String) = 
+    def value_=(a: A) = 
       dbObj.getOrElse { 
         dbObj = Some(new BasicDBObject)
         dbObj.get
-      } += (fieldName -> s) 
+      } += (fieldName -> a.asInstanceOf[AnyRef]) 
   }
 
   def save = dbObj.foreach { Config.deals.save(_) }
 }
 
 class Deal extends MongoBean {
-  val source = new Attribute("source")
-  val retailer = new Attribute("retailer")
+  val source = new Attribute[String]("source")
+  val retailer = new Attribute[String]("retailer")
 }
