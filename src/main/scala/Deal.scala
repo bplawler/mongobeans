@@ -1,6 +1,7 @@
 package mongobeans
 
 import com.mongodb.casbah.Imports._
+import scala.collection.immutable.Set
 
 object Config {
   val conn = MongoConnection("mongodb.circupon.internal")
@@ -9,29 +10,42 @@ object Config {
 }
 
 trait MongoBean {
+  val coll: MongoCollection
+
   private var dbObj: Option[DBObject] = None
 
   def load(_id: String) = 
-    dbObj = Config.deals.findOneByID(new org.bson.types.ObjectId(_id))
+    dbObj = coll.findOneByID(new org.bson.types.ObjectId(_id))
 
   class Attribute[A](val fieldName: String) {
     def value: Option[A] =
       dbObj
-        .map { obj => Option(obj.get(fieldName).asInstanceOf[A]) }
-        .getOrElse { None }
+        .flatMap { obj => 
+          Option(obj.get(fieldName)) 
+          .map {
+            case l: BasicDBList => l.toSet.asInstanceOf[A]
+            case a: AnyRef => a.asInstanceOf[A]
+          }
+        }
 
-    def value_=(a: A) = ensureDbObj += (fieldName -> extractValue(a)) 
+    def value_=(a: A) = ensureDbObj += (fieldName -> a.asInstanceOf[AnyRef])
       
-    protected def extractValue(a: A) = a match {
-      case s: StringEnum => a.toString
-      case _ => a.asInstanceOf[AnyRef]
-    }
-
     protected def ensureDbObj: DBObject = 
       dbObj.getOrElse { 
         dbObj = Some(new BasicDBObject)
         dbObj.get
       }
+  }
+
+  class EnumAttribute[A](fieldName: String, converter: (String) => Option[A] )
+   extends Attribute[A](fieldName) {
+    override def value: Option[A] =
+      dbObj
+        .flatMap { obj => 
+          obj.getAs[String](fieldName).flatMap(converter(_))
+        }
+
+    override def value_=(a: A) = ensureDbObj += (fieldName -> a.toString)
   }
 
  /**
@@ -59,7 +73,7 @@ trait MongoBean {
     def assertValue(rule: String, value: A): Unit = {
       val assertionContainer = getOrAdd(ensureDbObj, "assertions")
       val fieldContainer = getOrAdd(assertionContainer, fieldName)
-      fieldContainer += (rule -> extractValue(value))
+      fieldContainer += (rule -> value.asInstanceOf[AnyRef])
     }
 
     def getAssertedValue(rule: String): Option[A] = 
@@ -99,19 +113,33 @@ trait MongoBean {
         "be set directly.  It must be asserted and validated.")
   }
 
-  def save = dbObj.foreach { Config.deals.save(_) }
+  def save = dbObj.foreach { coll.save(_) }
 }
 
-trait StringEnum 
-sealed class Retailer extends StringEnum
-case object Walgreens extends Retailer
-case object CVS extends Retailer
-case object RiteAid extends Retailer
+trait StringEnum[A] {
+  var mappings = Map[String, A]()
+  def unapply(s: String): Option[A] = mappings.get(s)
+}
+
+////  EVERYTHING FROM HERE DOWN IS "APP"
+
+object Retailer extends StringEnum[Retailer] {
+  case object Walgreens extends Retailer  ; Walgreens
+  case object CVS extends Retailer        ; CVS
+  case object RiteAid extends Retailer    ; RiteAid
+}
+
+sealed class Retailer {
+  Retailer.mappings += (this.toString -> this)
+}
 
 class Deal extends MongoBean {
+  val coll = Config.deals
+
   val source = new Attribute[String]("source")
-  val retailer = new Attribute[Retailer]("retailer")
-  val number = new Attribute[Long]("retailer")
-  val brands = new Attribute[List[String]]("brands")
+  val retailer = new EnumAttribute[Retailer]("retailer", Retailer.unapply)
+  val number = new Attribute[Long]("number")
+  val brands = new Attribute[Set[String]]("brand")
+  val zipCodes = new Attribute[Set[String]]("zipCode")
   val validTo = new AssertedAttribute[java.util.Date]("validTo")
 }
