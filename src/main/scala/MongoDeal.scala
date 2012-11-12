@@ -3,19 +3,25 @@ package mongobeans
 import com.mongodb.casbah.Imports._
 import scala.collection.immutable.Set
 
-object Config {
-  val conn = MongoConnection("mongodb.circupon.internal")
-  val db = conn("mongobeans")
-  val deals = db("deals")
-}
-
+/**
+ * MongoBean is a trait that may be mixed in with a scala object in order 
+ * to give that bean the ability to be saved into a Mongo database.
+ */
 trait MongoBean {
+ /**
+  * A MongoCollection instance into which this bean is to be stored and 
+  * retrieved from.
+  */
   val coll: MongoCollection
+  
+  val _id: Attribute[_]
 
+ /**
+  * Backing Mongo document for this object.
+  */
   private var dbObj: Option[DBObject] = None
 
-  def load(_id: String) = 
-    dbObj = coll.findOneByID(new org.bson.types.ObjectId(_id))
+  def load = dbObj = coll.findOneByID(_id.value)
 
   class Attribute[A](val fieldName: String) {
     def value: Option[A] =
@@ -126,26 +132,4 @@ trait StringEnum[A] {
 
 class StringEnumItem(enum: StringEnum[_]) {
   enum.addMapping(this);
-}
-
-////  EVERYTHING FROM HERE DOWN IS "APP"
-
-sealed class Retailer extends StringEnumItem(RetailerEnum) 
-
-object RetailerEnum extends StringEnum[Retailer] {
-  Walgreens ; case object Walgreens extends Retailer 
-  CVS       ; case object CVS extends Retailer
-  RiteAid   ; case object RiteAid extends Retailer
-}
-
-class Deal extends MongoBean {
-  val coll = Config.deals
-
-  val _id = new Attribute[org.bson.types.ObjectId]("_id")
-  val source = new Attribute[String]("source")
-  val retailer = new EnumAttribute[Retailer]("retailer", RetailerEnum)
-  val number = new Attribute[Long]("number")
-  val brands = new Attribute[Set[String]]("brand")
-  val zipCodes = new Attribute[Set[String]]("zipCode")
-  val validTo = new AssertedAttribute[java.util.Date]("validTo")
 }
