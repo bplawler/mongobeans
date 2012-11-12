@@ -91,20 +91,6 @@ trait MongoBean {
   */
   class AssertedAttribute[A](fieldName: String) 
    extends Attribute[A](fieldName) {
-    private def getOrAdd(o: DBObject, elementName: String): DBObject = 
-      o.getAs[DBObject](elementName)
-        .getOrElse { 
-          val result = new BasicDBObject
-          o += (elementName -> result)
-          result
-        } 
-
-    def assertValue(rule: String, value: A): Unit = {
-      val assertionContainer = getOrAdd(ensureDbObj, "assertions")
-      val fieldContainer = getOrAdd(assertionContainer, fieldName)
-      fieldContainer += (rule -> value.asInstanceOf[AnyRef])
-    }
-
     def getAssertedValue(rule: String): Option[A] = 
       for(
         obj <- dbObj; 
@@ -122,11 +108,38 @@ trait MongoBean {
 
     def isAsserted: Boolean = getAssertedValues.isDefined
 
+    def isValidated: Boolean = value.isDefined
+
+    override def value_=(v: A) = 
+      throw new RuntimeException("The value of an asserted field may not " +
+        "be set directly.  It must be asserted and validated.")
+
+   /* 
+    * The following are fields that change the document state in some
+    * way and thus have implications on application concurrency.
+    */
+
+    private def getOrAdd(o: DBObject, elementName: String): DBObject = 
+      o.getAs[DBObject](elementName)
+        .getOrElse { 
+          val result = new BasicDBObject
+          o += (elementName -> result)
+          result
+        } 
+
+    def assertValue(rule: String, value: A): Unit = {
+      val assertionContainer = getOrAdd(ensureDbObj, "assertions")
+      val fieldContainer = getOrAdd(assertionContainer, fieldName)
+      fieldContainer += (rule -> value.asInstanceOf[AnyRef])
+    }
+
     def validate(rule: String): Unit = {
       val validationsContainer = getOrAdd(ensureDbObj, "validations")
-      val value = getAssertedValue(rule);
-      validationsContainer += (fieldName -> rule)
-      ensureDbObj += (fieldName -> value.asInstanceOf[Object])
+      getAssertedValue(rule)
+        .foreach( value => {
+          validationsContainer += (fieldName -> rule)
+          ensureDbObj += (fieldName -> value.asInstanceOf[Object])
+        })
     }
 
     def invalidate: Unit = {
@@ -134,12 +147,6 @@ trait MongoBean {
       validationsContainer -= fieldName
       ensureDbObj -= fieldName 
     }
-
-    def isValidated: Boolean = value.isDefined
-
-    override def value_=(v: A) = 
-      throw new RuntimeException("The value of an asserted field may not " +
-        "be set directly.  It must be asserted and validated.")
   }
 }
 
