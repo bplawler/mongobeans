@@ -14,6 +14,10 @@ trait MongoBean {
   */
   val coll: MongoCollection
   
+ /**
+  * Beans that are to be stored in mongo must define an explicit _id
+  * attribute which will be used as the primary key in the document collection.
+  */
   val _id: Attribute[_]
 
  /**
@@ -21,8 +25,23 @@ trait MongoBean {
   */
   private var dbObj: Option[DBObject] = None
 
+ /**
+  * Public method that will use the current value of the _id attribute to load
+  * a backing document behind this bean.
+  */
   def load = dbObj = coll.findOneByID(_id.value)
 
+ /**
+  * Public method for saving the document to the collection after making
+  * changes to it in the app.
+  */
+  def save = dbObj.foreach { coll.save(_) }
+
+ /**
+  * Instances of the Attribute class are instantiated by the implementing bean
+  * for each attribute that is to be stored in Mongo.  [A] is the type of 
+  * the attribute (e.g. String, Date, Long, etc.)
+  */
   class Attribute[A](val fieldName: String) {
     def value: Option[A] =
       dbObj
@@ -43,6 +62,10 @@ trait MongoBean {
       }
   }
 
+ /**
+  * An EnumAttribute is an attribute whose value is an enum that has been
+  * defined following the pattern put forth by the MongoBeans project.
+  */
   class EnumAttribute[A](fieldName: String, enum: StringEnum[A] )
    extends Attribute[A](fieldName) {
     override def value: Option[A] =
@@ -118,10 +141,13 @@ trait MongoBean {
       throw new RuntimeException("The value of an asserted field may not " +
         "be set directly.  It must be asserted and validated.")
   }
-
-  def save = dbObj.foreach { coll.save(_) }
 }
 
+/**
+ * Objects that extend StringEnum may be passed into the EnumAttribute 
+ * constructor to provide advice on how to get enumerated values into and out
+ * of the database.
+ */
 trait StringEnum[A] {
   private var mappings = Map[String, A]()
   def apply(s: String): Option[A] = mappings.get(s)
@@ -130,6 +156,10 @@ trait StringEnum[A] {
     mappings += (i.toString -> i.asInstanceOf[A])
 }
 
+/**
+ * Items in an enumeration should extend from a sealed base class, which 
+ * itself should extends from this base class.
+ */
 class StringEnumItem(enum: StringEnum[_]) {
   enum.addMapping(this);
 }
