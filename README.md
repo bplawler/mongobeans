@@ -41,10 +41,29 @@ My last major problem is in the area of maintainability, particularly
 maintainability of code that is creating new Mongo documents.  The way my
 code ended up working, I would basically build arbitrary maps, mapping
 `String` to `Any` and I would then send those maps off to the right
-collection and go from there.  
+collection and go from there.  This again was a side effect of my beans
+just being wrappers around database calls and not actually being beans
+with attributes.  The biggest problem with this (there are many) is that
+the pieces of code that are responsible for creating new objects need to 
+know what the attributes are and what types need to be populated into them.
+The compiler is of no help here because everything is a String or an Any,
+sort of like writing Java code that works only with Objects.
 
-## Patterns
+## Not a Library
 
-### Encapsulate direct access to Mongo collections.  
+This project doesn't contain all that much code.  It's really just a 
+project that I started from scratch so that I could try to address my 
+problems outside of the context of my application.  This project will not
+try to be yet another ORM tool for mapping scala objects to Mongo documents.
+But I will try to write some code here that does a far better job of using 
+Mongo, Casbah, and Scala to create maintainable code.
 
+## Enumerations are a Pain
 
+A problem that I always had with Java and Hibernate which has now followed
+me over to the world of Mongo and Scala is that of storing enumerated values
+in the database.  Getting them in there is pretty easy (toString anyone) but
+getting them back out and having to map the String value back to an instance
+of the item in the enumeration always required unsavory boilerplate code 
+that had to be created per enumeration.  In this project I am looking to find
+a way to minimize that boilerplate code.
