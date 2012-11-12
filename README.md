@@ -10,7 +10,7 @@ directly accessing the database all over the place, and I have all kinds of
 code baked right into my domain model that relies heavily on the Casbah API.
 
 One of the most egregious fouls I have committed in my code is that my 
-beans really have attributes.  Rather, accessor methods simply pass calls 
+beans don't really have attributes.  Rather, accessor methods simply pass calls 
 through to the Casbah API and retrieve values directly from memory:
 
 ```
