@@ -32,6 +32,14 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     "allow the application to invalidate a validated field not in-memory" ! e15^
     "if a field is invalidated that was not validated, not complain"      ! e16^
     "have the same concurrency support as other attributes"               ! e17^
+                                                                          p^
+  "SetAttributes are a special type of attribute that should"             ^
+    "allow me to assign a whole Set as the value in-memory"               ! e18^
+    "allow me to assign a whole Set as the value in-db"                   ! e19^
+    "allow me to add elements one by one to an in-memory Set"             ! e20^
+    "allow me to remove elements one by one from an in-memory Set"        ! e21^
+    "allow me to add elements one by one to an in-db Set"                 ! e22^
+    "allow me to remove elements one by one from an in-db Set"            ! e23^
                                                                            end
     
   def e1 = {
@@ -192,6 +200,76 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     d1.title.validate("rule 3")
     d1.title.value must_== Some("title 3")
   }
+
+  def e18 = {
+    val d = new Deal
+    d.brands.value = Set("a", "b", "c")
+    d.save
+    d.brands.value must_== Some(Set("a", "b", "c"))
+  }
+
+  def e19 = {
+    val d1 = new Deal
+    d1.brands.value = Set("a", "b", "c")
+    d1.save
+
+    val d2 = new Deal
+    d2._id.value = d1._id.value.get
+    d2.load
+
+    d1.brands.value = Set("d", "e", "f")
+    d2.brands.value must_== Some(Set("d", "e", "f"))
+  }
+
+  def e20 = {
+    val d = new Deal
+    d.brands.add("Dove")
+    d.brands.add("Olay")
+    d.brands.add("Ivory")
+
+    d.brands.value must_== Some(Set("Dove", "Olay", "Ivory"))
+  }
+
+  def e21 = {
+    val d = new Deal
+    d.brands.add("Dove")
+    d.brands.add("Olay")
+    d.brands.add("Ivory")
+
+    d.brands.remove("Olay")
+
+    d.brands.value must_== Some(Set("Dove", "Ivory"))
+  }
+
+  def e22 = {
+    val d1 = new Deal
+    d1.brands.add("Dove")
+    d1.brands.add("Olay")
+    d1.save
+
+    val d2 = new Deal
+    d2._id.value = d1._id.value.get
+    d2.load
+
+    d1.brands.add("Ivory")
+    d2.brands.value must_== Some(Set("Dove", "Olay", "Ivory"))
+  }
+
+  def e23 = {
+    val d1 = new Deal
+    d1.brands.add("Dove")
+    d1.brands.add("Olay")
+    d1.brands.add("Ivory")
+    d1.save
+
+    val d2 = new Deal
+    d2._id.value = d1._id.value.get
+    d2.load
+
+    d1.brands.remove("Ivory")
+    d2.brands.value must_== Some(Set("Dove", "Olay"))
+  }
+
 
   implicit val before: Context = new Before { 
     def before = Config.deals.remove(MongoDBObject())

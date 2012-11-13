@@ -15,7 +15,7 @@ class Deal extends CircuponMongoBean {
   val source = new Attribute[String]("source")
   val retailer = new EnumAttribute[Retailer]("retailer", RetailerEnum)
   val number = new Attribute[Long]("number")
-  val brands = new Attribute[Set[String]]("brand")
+  val brands = new SetAttribute[String]("brand")
   val zipCodes = new Attribute[Set[String]]("zipCode")
   val validTo = new AssertedAttribute[java.util.Date]("validTo")
   val title = new AssertedAttribute[String]("title")

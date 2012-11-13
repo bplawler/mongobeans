@@ -108,6 +108,17 @@ trait MongoBean {
 
     override def value_=(a: A) = setValue(enum.unapply(a))
   }
+
+  class SetAttribute[A](fieldName: String) 
+   extends Attribute[Set[A]](fieldName) {
+    def add(a: A) = {
+      value = value.getOrElse(Set()) + a
+    }
+
+    def remove(a: A) = {
+      value = value.getOrElse(Set()) - a
+    }
+  }
 }
 
 /**
