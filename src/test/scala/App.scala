@@ -17,5 +17,5 @@ class Deal extends MongoBean {
   val number = new Attribute[Long]("number")
   val brands = new Attribute[Set[String]]("brand")
   val zipCodes = new Attribute[Set[String]]("zipCode")
-  val validTo = new AssertedAttribute[java.util.Date]("validTo")
+  //val validTo = new AssertedAttribute[java.util.Date]("validTo")
 }

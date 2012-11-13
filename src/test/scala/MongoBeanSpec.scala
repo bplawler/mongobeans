@@ -2,7 +2,7 @@ import org.specs2._
 import specification.{Before, Context}
 import com.mongodb.casbah.Imports._
 
-class HelloWorldSpec extends Specification { def is =           sequential ^
+class MongoBeanSpec extends Specification { def is =            sequential ^
   "This is a specification to test the mongobeans functionality"           ^
                                                                            p^
   "Instantiating a new Deal instance should"                               ^
@@ -57,7 +57,17 @@ class HelloWorldSpec extends Specification { def is =           sequential ^
     newDeal.source.value must_== d.source.value
   }
 
-  def e7 = pending
+  def e7 = {
+    val d1 = defaultDeal
+    d1.save
+    val _id = d1._id.value
+    val d2 = new Deal
+    d2._id.value = _id.get
+    d2.load
+
+    d2.number.value = 3
+    d1.number.value must_== Some(3)
+  }
 
   implicit val before: Context = new Before { 
     def before = Config.deals.remove(MongoDBObject())

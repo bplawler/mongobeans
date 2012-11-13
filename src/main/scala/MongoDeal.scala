@@ -20,22 +20,55 @@ trait MongoBean {
   */
   val _id: Attribute[_]
 
+  private def beanId: MongoDBObject = 
+    _id.value.map(id => MongoDBObject("_id" -> id))
+      .getOrElse(throw new RuntimeException("Attempting to create a " +
+        "beanId criteria when the _id has not been set."))
+
  /**
   * Backing Mongo document for this object.
   */
   private var dbObj: Option[DBObject] = None
 
+  private var inMemory: Boolean = true
+
  /**
   * Public method that will use the current value of the _id attribute to load
   * a backing document behind this bean.
   */
-  def load = dbObj = coll.findOneByID(_id.value)
+  def load = {
+    inMemory = false
+  }
 
  /**
   * Public method for saving the document to the collection after making
   * changes to it in the app.
   */
-  def save = dbObj.foreach { coll.save(_) }
+  def save = {
+    if(!inMemory)
+      throw new RuntimeException("Do not call save() on objects that have " +
+        "been loaded.  Others may be attempting to change the same object.")
+    dbObj.foreach { coll.save(_) }
+    inMemory = false
+  }
+
+  private def ensureDbObject: DBObject = {
+    if(!inMemory) {
+      // Can't use the _id.value here - that would cause an infinite 
+      // recursion since Attribute.value calls this method!  Use the dbObj
+      // instance directly instead.
+      dbObj
+        .map(_.get("_id"))
+        .map(coll.findOneByID(_).get)
+        .get
+    }
+    else {
+      dbObj.getOrElse { 
+        dbObj = Some(new BasicDBObject)
+        dbObj.get
+      }
+    }
+  }
 
  /**
   * Instances of the Attribute class are instantiated by the implementing bean
@@ -44,22 +77,23 @@ trait MongoBean {
   */
   class Attribute[A](val fieldName: String) {
     def value: Option[A] =
-      dbObj
-        .flatMap { obj => 
-          Option(obj.get(fieldName)) 
-          .map {
-            case l: BasicDBList => l.toSet.asInstanceOf[A]
-            case a: AnyRef => a.asInstanceOf[A]
-          }
+      Option(ensureDbObject.get(fieldName))
+        .map {
+          case l: BasicDBList => l.toSet.asInstanceOf[A]
+          case a: AnyRef => a.asInstanceOf[A]
         }
 
-    def value_=(a: A) = ensureDbObj += (fieldName -> a.asInstanceOf[AnyRef])
-      
-    protected def ensureDbObj: DBObject = 
-      dbObj.getOrElse { 
-        dbObj = Some(new BasicDBObject)
-        dbObj.get
+    def value_=(a: A) = setValue(a.asInstanceOf[AnyRef])
+
+    protected def setValue(a: AnyRef) = {
+      if(inMemory) {
+        ensureDbObject += (fieldName -> a)
       }
+      else {
+        coll.update(beanId, $set(fieldName -> a))
+      }
+    }
+    
   }
 
  /**
@@ -74,79 +108,7 @@ trait MongoBean {
           obj.getAs[String](fieldName).flatMap(enum(_))
         }
 
-    override def value_=(a: A) = ensureDbObj += (fieldName -> enum.unapply(a))
-  }
-
- /**
-  * An AssertedAttribute is an attribute that may have any of several values,
-  * and it is up to the application to decide which value is the correct value.
-  * When an object that contains assertable attributes is being created, it may
-  * not be immediately apparent what the correct value is for the asserted 
-  * attribute.  So what we do is add in, based on a set of rules, all of the
-  * values that the attribute may have then we leave the downstream processing 
-  * of figuring out which value is correct for later.  The underlying mongo 
-  * document will store all of the assertions in a separate area.  The only
-  * way to actually set the value of the field is to validate one of the 
-  * asserted rules.
-  */
-  class AssertedAttribute[A](fieldName: String) 
-   extends Attribute[A](fieldName) {
-    def getAssertedValue(rule: String): Option[A] = 
-      for(
-        obj <- dbObj; 
-        assertionsContainer <- obj.getAs[DBObject]("assertions");
-        fieldContainer <- assertionsContainer.getAs[DBObject](fieldName);
-        ruleValue <- Option(fieldContainer.get(rule).asInstanceOf[A])
-      ) yield ruleValue
-
-    def getAssertedValues: Option[scala.collection.Map[String, A]] = 
-      for(
-        obj <- dbObj; 
-        assertionsContainer <- obj.getAs[DBObject]("assertions");
-        fieldContainer <- assertionsContainer.getAs[DBObject](fieldName)
-      ) yield fieldContainer.mapValues { _.asInstanceOf[A] }
-
-    def isAsserted: Boolean = getAssertedValues.isDefined
-
-    def isValidated: Boolean = value.isDefined
-
-    override def value_=(v: A) = 
-      throw new RuntimeException("The value of an asserted field may not " +
-        "be set directly.  It must be asserted and validated.")
-
-   /* 
-    * The following are fields that change the document state in some
-    * way and thus have implications on application concurrency.
-    */
-
-    private def getOrAdd(o: DBObject, elementName: String): DBObject = 
-      o.getAs[DBObject](elementName)
-        .getOrElse { 
-          val result = new BasicDBObject
-          o += (elementName -> result)
-          result
-        } 
-
-    def assertValue(rule: String, value: A): Unit = {
-      val assertionContainer = getOrAdd(ensureDbObj, "assertions")
-      val fieldContainer = getOrAdd(assertionContainer, fieldName)
-      fieldContainer += (rule -> value.asInstanceOf[AnyRef])
-    }
-
-    def validate(rule: String): Unit = {
-      val validationsContainer = getOrAdd(ensureDbObj, "validations")
-      getAssertedValue(rule)
-        .foreach( value => {
-          validationsContainer += (fieldName -> rule)
-          ensureDbObj += (fieldName -> value.asInstanceOf[Object])
-        })
-    }
-
-    def invalidate: Unit = {
-      val validationsContainer = getOrAdd(ensureDbObj, "validations")
-      validationsContainer -= fieldName
-      ensureDbObj -= fieldName 
-    }
+    override def value_=(a: A) = setValue(enum.unapply(a))
   }
 }
 
