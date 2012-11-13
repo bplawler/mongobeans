@@ -8,16 +8,20 @@ class MongoBeanSpec extends Specification { def is =            sequential ^
   "Instantiating a new Deal instance should"                               ^
     "allow me to set and get String properties"                            ! e1^
     "but should not save anything to the database"                         ! e2^
-    "until the save method is invoked on the bean implementation"          ! e3^
+    "until the save method is invoked on the bean"                         ! e3^
                                                                            p^
   "The _id attribute has special behavior.  It should"                     ^
     "not be set for new instances of mongobeans"                           ! e4^
     "be automatically updated when a new bean is saved to the collection"  ! e5^
-    "if set to a value by the application, a call to load should load"     +
+    "if set to a value by the application, a call to load() should load"   +
       "the corresponding document behind this bean"                        ! e6^
                                                                            p^
-  "Concurrent modifications to the same document should"                   ^
-    "work correctly"                                                       ! e7^
+  "Concurrent modifications to different beans with the same backing doc"  ^
+    "should be immediately available in both beans"                        ! e7^
+                                                                           p^
+  "Typed enumerations in and out of the database should"                   ^
+    "allow enums to be stored like other attributes"                       ! e8^
+    "have the same concurrency support as other attributes"                ! e9^
                                                                            end
     
   def e1 = {
@@ -67,6 +71,24 @@ class MongoBeanSpec extends Specification { def is =            sequential ^
 
     d2.number.value = 3
     d1.number.value must_== Some(3)
+  }
+
+  def e8 = {
+    val d = new Deal
+    d.retailer.value = RetailerEnum.Walgreens
+    d.retailer.value must_== Some(RetailerEnum.Walgreens)
+  }
+
+  def e9 = {
+    val d1 = new Deal
+    d1.retailer.value = RetailerEnum.Walgreens
+    d1.save
+    val d2 = new Deal
+    d2._id.value = d1._id.value.get
+    d2.load
+    
+    d1.retailer.value = RetailerEnum.CVS
+    d2.retailer.value must_== Some(RetailerEnum.CVS)
   }
 
   implicit val before: Context = new Before { 

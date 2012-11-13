@@ -48,8 +48,10 @@ trait MongoBean {
     if(!inMemory)
       throw new RuntimeException("Do not call save() on objects that have " +
         "been loaded.  Others may be attempting to change the same object.")
-    dbObj.foreach { coll.save(_) }
-    inMemory = false
+    dbObj.foreach(obj => { 
+      coll.save(obj) 
+      inMemory = false
+    })
   }
 
   private def ensureDbObject: DBObject = {
@@ -103,10 +105,7 @@ trait MongoBean {
   class EnumAttribute[A](fieldName: String, enum: StringEnum[A] )
    extends Attribute[A](fieldName) {
     override def value: Option[A] =
-      dbObj
-        .flatMap { obj => 
-          obj.getAs[String](fieldName).flatMap(enum(_))
-        }
+      ensureDbObject.getAs[String](fieldName).flatMap(enum(_))
 
     override def value_=(a: A) = setValue(enum.unapply(a))
   }
