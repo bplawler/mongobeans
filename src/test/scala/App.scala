@@ -8,7 +8,7 @@ object RetailerEnum extends StringEnum[Retailer] {
   RiteAid   ; case object RiteAid extends Retailer
 }
 
-class Deal extends MongoBean {
+class Deal extends CircuponMongoBean {
   val coll = Config.deals
 
   val _id = new Attribute[org.bson.types.ObjectId]("_id")
