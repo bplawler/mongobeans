@@ -4,8 +4,13 @@ version := "0.1"
 
 scalaVersion := "2.8.1"
 
-resolvers += "sonatype" at "https://oss.sonatype.org/content/repositories/scala-tools/"
+resolvers ++= Seq(
+    "sonatype"  at "http://oss.sonatype.org/content/repositories/scala-tools/"
+  , "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots"
+  , "releases"  at "http://oss.sonatype.org/content/repositories/releases")
 
 libraryDependencies ++= Seq (
-  "com.mongodb.casbah" %% "casbah" % "2.1.5.0"
+    "com.mongodb.casbah" %% "casbah" % "2.1.5.0"
+  , "org.specs2" %% "specs2" % "1.5" % "test"
+  , "org.specs2" %% "specs2-scalaz-core" % "5.1-SNAPSHOT" % "test"
 )
