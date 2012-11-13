@@ -67,3 +67,16 @@ getting them back out and having to map the String value back to an instance
 of the item in the enumeration always required unsavory boilerplate code 
 that had to be created per enumeration.  In this project I am looking to find
 a way to minimize that boilerplate code.
+
+## Concurrency
+
+As I said, I don't want for this thing to be a huge complex piece of library
+code that tries to take into account all situtations and environments.  
+Concurrency is one example of a piece of functionalty that can be really 
+difficult to deal with absent any knowledge of the application.  This 
+application was initially built making having use of Mongo's atomic operations
+for doing most of the database updates.  But as I mentioned before, code
+that was responsible for actually creating new documents was completely 
+separate from the code being used to maintain those documents, which resulted
+in not only a dual maintenance nightmare, but also in a non type safe 
+implementation that was very proned to maintenance problems.
