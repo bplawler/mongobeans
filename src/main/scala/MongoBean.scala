@@ -49,7 +49,7 @@ trait MongoBean {
       throw new RuntimeException("Do not call save() on objects that have " +
         "been loaded.  Others may be attempting to change the same object.")
     dbObj.foreach(obj => { 
-      coll.save(obj) 
+      coll.save(obj, WriteConcern.Safe) 
       inMemory = false
     })
   }

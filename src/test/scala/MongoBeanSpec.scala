@@ -44,6 +44,9 @@ class MongoBeanSpec extends Specification { def is =            sequential^
   "ValueConverters, mixins that can change a validated value, should"     ^
     "not affect the value of asserted rules"                              ! e24^
     "should affect the only the validated value of a field"               ! e25^
+                                                                          p^
+  "save() uses WriteConcern.Safe, which should"                           ^
+    "throw an error on duplicate inserts"                                 ! e26^
                                                                            end
     
   def e1 = {
@@ -75,6 +78,7 @@ class MongoBeanSpec extends Specification { def is =            sequential^
 
   def e6 = {
     val d = defaultDeal
+    d.href.value = "e6.d"
     d.save
     val _id = d._id.value
     val newDeal = new Deal
@@ -140,6 +144,7 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     d1.title.assertValue("rule 1", "title 1")
     d1.title.assertValue("rule 2", "title 2")
     d1.title.validate("rule 2")
+    d1.href.value = "e11.d1"
     d1.save
 
     d1.title.value must_== Some("title 2")
@@ -149,6 +154,7 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     val d1 = new Deal
     d1.title.assertValue("rule 1", "title 1")
     d1.title.assertValue("rule 2", "title 2")
+    d1.href.value = "e12.d1"
     d1.save
 
     d1.title.validate("rule 2")
@@ -188,6 +194,7 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     val d1 = new Deal
     d1.title.assertValue("rule 1", "title 1")
     d1.title.assertValue("rule 2", "title 2")
+    d1.href.value = "e16.d1"
     d1.save
 
     d1.title.invalidate
@@ -198,6 +205,7 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     val d1 = new Deal
     d1.title.assertValue("rule 1", "title 1")
     d1.title.assertValue("rule 2", "title 2")
+    d1.href.value = "e17.d1"
     d1.save
 
     d1.title.assertValue("rule 3", "title 3")
@@ -208,6 +216,7 @@ class MongoBeanSpec extends Specification { def is =            sequential^
   def e18 = {
     val d = new Deal
     d.brands.value = Set("a", "b", "c")
+    d.href.value = "e18.d"
     d.save
     d.brands.value must_== Some(Set("a", "b", "c"))
   }
@@ -215,6 +224,7 @@ class MongoBeanSpec extends Specification { def is =            sequential^
   def e19 = {
     val d1 = new Deal
     d1.brands.value = Set("a", "b", "c")
+    d1.href.value = "e19.d1"
     d1.save
 
     val d2 = new Deal
@@ -291,8 +301,19 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     d1.caps.value.get must_== "TITLE 1"
   }
 
+  def e26 = {
+    val d1 = new Deal
+    val d2 = new Deal
+
+    d1.href.value = "dup!"
+    d2.href.value = "dup!"
+
+    d1.save
+    d2.save
+  } must throwA[com.mongodb.MongoException.DuplicateKey]
+
   implicit val before: Context = new Before { 
-    def before = Config.deals.remove(MongoDBObject())
+    def before = Config.deals.remove(MongoDBObject(), WriteConcern.Safe)
   }
     
   def defaultDeal = {
