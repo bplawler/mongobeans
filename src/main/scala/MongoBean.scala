@@ -87,6 +87,15 @@ trait MongoBean {
 
     def value_=(a: A) = setValue(a.asInstanceOf[AnyRef])
 
+    def unset = {
+      if(inMemory) {
+        ensureDbObject -= fieldName
+      }
+      else {
+        coll.update(beanId, $unset(fieldName))
+      }
+    }
+
     protected def setValue(a: AnyRef) = {
       if(inMemory) {
         ensureDbObject += (fieldName -> a)

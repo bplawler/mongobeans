@@ -47,6 +47,11 @@ class MongoBeanSpec extends Specification { def is =            sequential^
                                                                           p^
   "save() uses WriteConcern.Safe, which should"                           ^
     "throw an error on duplicate inserts"                                 ! e26^
+                                                                          p^
+  "The Attribute.unset() method should"                                   ^
+    "clear out the underlying document key for in-memory beans"           ! e27^
+    "clear out the underlying document key for in-database beans"         ! e28^
+    "not complain if I try to unset a field that is not set"              ! e29^
                                                                            end
     
   def e1 = {
@@ -311,6 +316,33 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     d1.save
     d2.save
   } must throwA[com.mongodb.MongoException.DuplicateKey]
+
+  def e27 = {
+    val d = new Deal
+    d.source.value = "The Source"
+    d.source.unset
+    !d.source.value.isDefined
+  }
+
+  def e28 = {
+    val d1 = new Deal
+    d1.source.value = "The Source"
+    d1.save
+
+    val d2 = new Deal
+    d2._id.value = d1._id.value.get
+    d2.load
+
+    d1.source.unset
+    !d2.source.value.isDefined
+  }
+
+  def e29 = {
+    val d = new Deal
+    d.save
+    d.source.unset
+    !d.source.value.isDefined
+  }
 
   implicit val before: Context = new Before { 
     def before = Config.deals.remove(MongoDBObject(), WriteConcern.Safe)
