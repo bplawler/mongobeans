@@ -40,6 +40,10 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     "allow me to remove elements one by one from an in-memory Set"        ! e21^
     "allow me to add elements one by one to an in-db Set"                 ! e22^
     "allow me to remove elements one by one from an in-db Set"            ! e23^
+                                                                          p^
+  "ValueConverters, mixins that can change a validated value, should"     ^
+    "not affect the value of asserted rules"                              ! e24^
+    "should affect the only the validated value of a field"               ! e25^
                                                                            end
     
   def e1 = {
@@ -270,6 +274,22 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     d2.brands.value must_== Some(Set("Dove", "Olay"))
   }
 
+  def e24 = {
+    val d1 = new Deal
+    d1.caps.assertValue("rule 1", "title 1")
+    d1.save
+
+    d1.caps.getAssertedValue("rule 1").get must_== "title 1"
+  }
+
+  def e25 = {
+    val d1 = new Deal
+    d1.caps.assertValue("rule 1", "title 1")
+    d1.save
+    d1.caps.validate("rule 1")
+
+    d1.caps.value.get must_== "TITLE 1"
+  }
 
   implicit val before: Context = new Before { 
     def before = Config.deals.remove(MongoDBObject())

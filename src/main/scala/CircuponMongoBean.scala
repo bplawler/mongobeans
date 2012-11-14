@@ -2,6 +2,10 @@ package mongobeans
 
 import com.mongodb.casbah.Imports._
 
+trait ValueConverter[A] {
+  protected def makeValidatedValue(value: A): A = value
+}
+
 trait CircuponMongoBean extends mongobeans.MongoBean {
 
  /**
@@ -17,7 +21,8 @@ trait CircuponMongoBean extends mongobeans.MongoBean {
   * asserted rules.
   */
   class AssertedAttribute[A](fieldName: String) 
-   extends Attribute[A](fieldName) {
+   extends Attribute[A](fieldName) with ValueConverter[A] {
+
     def getAssertedValue(rule: String): Option[A] = 
       for(
         assertionsContainer <- ensureDbObject.getAs[DBObject]("assertions");
@@ -66,20 +71,23 @@ trait CircuponMongoBean extends mongobeans.MongoBean {
     }
 
     def validate(rule: String): Unit = {
-      getAssertedValue(rule).map(value => {
-        if(inMemory) {
-          val validationsContainer = getOrAdd(ensureDbObject, "validations")
-          validationsContainer += (fieldName -> rule)
-          ensureDbObject += (fieldName -> value.asInstanceOf[Object])
-        }
-        else {
-          coll.update(beanId, $set("validations.%s".format(fieldName) -> rule))
-          coll.update(beanId, $set(fieldName -> value))
-        }
-      }).orElse(
-        throw new RuntimeException(
-          "rule [%s] has not been asserted on field [%s]"
-          .format(rule, fieldName)))
+      getAssertedValue(rule)
+        .map(makeValidatedValue(_))
+        .map(value => {
+          if(inMemory) {
+            val validationsContainer = getOrAdd(ensureDbObject, "validations")
+            validationsContainer += (fieldName -> rule)
+            ensureDbObject += (fieldName -> value.asInstanceOf[Object])
+          }
+          else {
+            coll.update(beanId, 
+              $set("validations.%s".format(fieldName) -> rule))
+            coll.update(beanId, $set(fieldName -> value))
+          }
+        }).orElse(
+          throw new RuntimeException(
+            "rule [%s] has not been asserted on field [%s]"
+            .format(rule, fieldName)))
     }
 
     def invalidate: Unit = {
