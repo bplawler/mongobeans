@@ -1,3 +1,5 @@
+package mongobeans
+
 import com.mongodb.casbah.Imports._
 
 trait CircuponMongoBean extends mongobeans.MongoBean {
