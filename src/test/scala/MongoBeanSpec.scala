@@ -1,3 +1,5 @@
+package mongobeans
+
 import org.specs2._
 import specification.{Before, Context}
 import com.mongodb.casbah.Imports._
@@ -52,6 +54,11 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     "clear out the underlying document key for in-memory beans"           ! e27^
     "clear out the underlying document key for in-database beans"         ! e28^
     "not complain if I try to unset a field that is not set"              ! e29^
+                                                                          p^
+  "MongoBeans also provides a method by which attribute instances may"    +
+  "be retrieved by name.  The getAttribute() method should"               ^
+    "return the correct named attribute for the name passed in"           ! e30^
+    "return none when something other than a valid name is provided"      ! e31^
                                                                            end
     
   def e1 = {
@@ -342,6 +349,18 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     d.save
     d.source.unset
     !d.source.value.isDefined
+  }
+  
+  def e30 = {
+    val d = new Deal
+    val attr = d.getAttribute("source")
+    attr must beAnInstanceOf[Option[mongobeans.MongoBean$Attribute]]
+  }
+
+  def e31 = {
+    val d = new Deal
+    val attr = d.getAttribute("foo")
+    attr must beNone
   }
 
   implicit val before: Context = new Before { 

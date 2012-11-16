@@ -8,6 +8,7 @@ import scala.collection.immutable.Set
  * to give that bean the ability to be saved into a Mongo database.
  */
 trait MongoBean {
+
  /**
   * A MongoCollection instance into which this bean is to be stored and 
   * retrieved from.
@@ -31,6 +32,11 @@ trait MongoBean {
   protected var dbObj: Option[DBObject] = None
 
   protected var inMemory: Boolean = true
+
+  protected var attributeMap = Map[String, Attribute[_]]()
+
+  def getAttribute(attrName: String): Option[Attribute[_]] = 
+    attributeMap.get(attrName)
 
  /**
   * Public method that will use the current value of the _id attribute to load
@@ -78,6 +84,8 @@ trait MongoBean {
   * the attribute (e.g. String, Date, Long, etc.)
   */
   class Attribute[A](val fieldName: String) {
+    attributeMap += fieldName -> this
+
     def value: Option[A] =
       Option(ensureDbObject.get(fieldName))
         .map {

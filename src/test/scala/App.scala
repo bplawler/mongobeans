@@ -1,4 +1,4 @@
-import mongobeans._
+package mongobeans
 
 trait Capitalize extends ValueConverter[String] {
   protected override def makeValidatedValue(s:String): String = {
