@@ -220,9 +220,10 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     d1.href.value = "e17.d1"
     d1.save
 
-    d1.title.assertValue("rule 3", "title 3")
-    d1.title.validate("rule 3")
-    d1.title.value must_== Some("title 3")
+    val d2 = new Deal
+    d2._id.value = d1._id.value.get
+    d2.load
+    d2.title.getAssertedValue("rule 1") must_== Some("title 1")
   }
 
   def e18 = {
