@@ -81,16 +81,14 @@ trait MongoBean {
   override def toString = 
     List(
       super.toString
-    , List(
-      attributeMap
+    , attributeMap
         .map { nameAndAttribute => 
           "%s: %s".format(
             nameAndAttribute._1
           , nameAndAttribute._2.value
           )
         }
-      )
-      .mkString(" ")
+        .mkString(" ")
     )
     .mkString("\n")
 
