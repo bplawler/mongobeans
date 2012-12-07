@@ -25,21 +25,26 @@ trait CircuponMongoBean extends mongobeans.MongoBean {
 
     def getAssertedValue(rule: String): Option[A] = 
       for(
-        assertionsContainer <- ensureDbObject.getAs[DBObject]("assertions");
-        fieldContainer <- assertionsContainer.getAs[DBObject](fieldName);
-        ruleValue <- Option(fieldContainer.get(rule).asInstanceOf[A])
+        assertions <- ensureDbObject.getAs[DBObject]("assertions");
+        field      <- assertions.getAs[DBObject](fieldName);
+        ruleValue  <- Option(field.get(rule).asInstanceOf[A])
       ) yield ruleValue
 
     def getAssertedValues: Option[scala.collection.Map[String, A]] = 
       for(
-        obj <- dbObj; 
-        assertionsContainer <- obj.getAs[DBObject]("assertions");
-        fieldContainer <- assertionsContainer.getAs[DBObject](fieldName)
-      ) yield fieldContainer.mapValues { _.asInstanceOf[A] }
+        assertions  <- ensureDbObject.getAs[DBObject]("assertions");
+        field       <- assertions.getAs[DBObject](fieldName)
+      ) yield field.mapValues { _.asInstanceOf[A] }
 
     def isAsserted: Boolean = getAssertedValues.isDefined
 
     def isValidated: Boolean = value.isDefined
+    
+    def validatedBy: Option[String] = 
+      for(
+        validations <- ensureDbObject.getAs[DBObject]("validations");
+        rule        <- validations.getAs[String](fieldName)
+      ) yield rule
 
     override def value_=(v: A) = 
       throw new RuntimeException("The value of an asserted field may not " +

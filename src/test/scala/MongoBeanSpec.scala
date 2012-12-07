@@ -29,6 +29,7 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     "allow apps to assert many possible values for a field"               ! e10^
     "allow for one of those rules to be validated before save is called"  ! e11^
     "as well as after save is called"                                     ! e12^
+    "allow applications to obtain the name of the validating rule"        !e12a^
     "fail with an exception if a rule that does not exist is validated"   ! e13^
     "allow the application to invalidate a validated field in-memory"     ! e14^
     "allow the application to invalidate a validated field not in-memory" ! e15^
@@ -171,6 +172,17 @@ class MongoBeanSpec extends Specification { def is =            sequential^
 
     d1.title.validate("rule 2")
     d1.title.value must_== Some("title 2")
+  }
+
+  def e12a = {
+    val d1 = new Deal
+    d1.title.assertValue("rule 1", "title 1")
+    d1.title.assertValue("rule 2", "title 2")
+    d1.href.value = "e12.d1"
+    d1.save
+
+    d1.title.validate("rule 2")
+    d1.title.validatedBy must_== Some("rule 2")
   }
 
   def e13 = {
