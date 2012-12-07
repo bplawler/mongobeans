@@ -4,6 +4,8 @@ version := "0.1"
 
 scalaVersion := "2.8.1"
 
+crossPaths in ThisBuild := false
+
 resolvers ++= Seq(
     "sonatype"  at "http://oss.sonatype.org/content/repositories/scala-tools/"
   , "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots"
