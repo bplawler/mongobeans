@@ -78,6 +78,22 @@ trait MongoBean {
     }
   }
 
+  override def toString = 
+    List(
+      super.toString
+    , List(
+      attributeMap
+        .map { nameAndAttribute => 
+          "%s: %s".format(
+            nameAndAttribute._1
+          , nameAndAttribute._2.value
+          )
+        }
+      )
+      .mkString(" ")
+    )
+    .mkString("\n")
+
  /**
   * Instances of the Attribute class are instantiated by the implementing bean
   * for each attribute that is to be stored in Mongo.  [A] is the type of 
