@@ -103,7 +103,6 @@ trait MongoBean {
     def value: Option[A] =
       Option(ensureDbObject.get(fieldName))
         .map {
-          case l: BasicDBList => l.toSet.asInstanceOf[A]
           case a: AnyRef => a.asInstanceOf[A]
         }
 
@@ -142,13 +141,28 @@ trait MongoBean {
 
   class SetAttribute[A](fieldName: String) 
    extends Attribute[Set[A]](fieldName) {
-    def add(a: A) = {
-      value = value.getOrElse(Set()) + a
-    }
+    def add(a: A) = value = value.getOrElse(Set()) + a
 
-    def remove(a: A) = {
-      value = value.getOrElse(Set()) - a
-    }
+    def remove(a: A) = value = value.getOrElse(Set()) - a
+
+    override def value: Option[Set[A]] =
+      Option(ensureDbObject.get(fieldName))
+        .map {
+          case l: BasicDBList => l.toSet.asInstanceOf[Set[A]]
+          case c: Set[_] => c.asInstanceOf[Set[A]]
+        }
+  }
+
+  class ListAttribute[A](fieldName: String) 
+   extends Attribute[List[A]](fieldName) {
+    def add(a: A) = value = value.getOrElse(List()) :+ a
+
+    override def value: Option[List[A]] =
+      Option(ensureDbObject.get(fieldName))
+        .map {
+          case l: BasicDBList => l.toList.asInstanceOf[List[A]]
+          case c: List[_] => c.asInstanceOf[List[A]]
+        }
   }
 }
 

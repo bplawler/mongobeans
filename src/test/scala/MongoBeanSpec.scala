@@ -60,6 +60,10 @@ class MongoBeanSpec extends Specification { def is =            sequential^
   "be retrieved by name.  The getAttribute() method should"               ^
     "return the correct named attribute for the name passed in"           ! e30^
     "return none when something other than a valid name is provided"      ! e31^
+                                                                          p^
+  "An attribute may also take the form of a List, which should"           ^
+    "allow me to add elements to the list and get them back in order"     ! e32^
+    "allow me to save the list and retrieve it later"                     ! e33^
                                                                            end
     
   def e1 = {
@@ -374,6 +378,30 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     val d = new Deal
     val attr = d.getAttribute("foo")
     attr must beNone
+  }
+
+  def e32 = {
+    val d = new Deal
+    val history = List("event 1", "event 2", "event 3")
+    d.history.value = history
+
+    d.history.value = d.history.value.get :+ "event 4"
+    d.history.value must_== 
+      Some(List("event 1", "event 2", "event 3", "event 4"))
+  }
+
+  def e33 = {
+    val d = new Deal
+    val history = List("event 1", "event 2", "event 3")
+    d.history.value = history
+    d.href.value = "e33"
+    d.save
+
+    val d2 = new Deal
+    d2._id.value = d._id.value.get
+    d2.load
+
+    d2.history.value must_== Some(List("event 1", "event 2", "event 3"))
   }
 
   implicit val before: Context = new Before { 

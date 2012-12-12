@@ -27,4 +27,5 @@ class Deal extends CircuponMongoBean {
   val title = new AssertedAttribute[String]("title") 
   val validTo = new AssertedAttribute[java.util.Date]("validTo")
   val zipCodes = new Attribute[Set[String]]("zipCode")
+  val history = new ListAttribute[String]("history")
 }
