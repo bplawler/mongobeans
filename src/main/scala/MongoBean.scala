@@ -3,11 +3,36 @@ package mongobeans
 import com.mongodb.casbah.Imports._
 import scala.collection.immutable.Set
 
+trait MongoBeanFinder {
+  protected var dbObj: Option[DBObject]
+  protected var inMemory: Boolean
+  protected def ensureDbObject: DBObject 
+  protected def flush: Unit = { }
+}
+
+trait CachedMongoBeanFinder extends MongoBeanFinder {
+  private var cachedDbObj: Option[DBObject] = None
+  
+  override protected def flush: Unit = { cachedDbObj = None }
+
+  abstract override protected def ensureDbObject: DBObject = {
+    if(inMemory) {
+      super.ensureDbObject
+    }
+    else {
+      cachedDbObj.getOrElse {
+        cachedDbObj = Some(super.ensureDbObject)
+        cachedDbObj.get
+      }
+    }
+  }
+}
+
 /**
  * MongoBean is a trait that may be mixed in with a scala object in order 
  * to give that bean the ability to be saved into a Mongo database.
  */
-trait MongoBean {
+trait MongoBean extends MongoBeanFinder {
 
  /**
   * A MongoCollection instance into which this bean is to be stored and 
@@ -123,6 +148,7 @@ trait MongoBean {
       }
       else {
         coll.update(beanId, $set(fieldName -> a))
+        flush
       }
     }
   }
