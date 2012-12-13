@@ -97,7 +97,7 @@ trait MongoBean {
   * for each attribute that is to be stored in Mongo.  [A] is the type of 
   * the attribute (e.g. String, Date, Long, etc.)
   */
-  class Attribute[A](val fieldName: String) {
+  class Attribute[A](val fieldName: String) extends ValueRetriever[A] {
     attributeMap += fieldName -> this
 
     def value: Option[A] =
@@ -106,7 +106,7 @@ trait MongoBean {
           case a: AnyRef => a.asInstanceOf[A]
         }
 
-    def value_=(a: A) = setValue(a.asInstanceOf[AnyRef])
+    def value_=(a: A): Unit = setValue(a.asInstanceOf[AnyRef])
 
     def unset = {
       if(inMemory) {
@@ -163,6 +163,32 @@ trait MongoBean {
           case l: BasicDBList => l.toList.asInstanceOf[List[A]]
           case c: List[_] => c.asInstanceOf[List[A]]
         }
+  }
+}
+
+trait ValueRetriever[A] {
+  def value         : Option[A]
+  def value_=(a: A) : Unit
+}
+
+/**
+ * Attributes that are instantiated with the cached value trait will only
+ * retrieve the attribute once and then save it's value for the life of the
+ * object.
+ */
+trait CachedAttribute[A] extends ValueRetriever[A] {
+  private var v: Option[A] = null
+
+  abstract override def value: Option[A] = {
+    if(v == null) {
+      v = super.value
+    }
+    v
+  }
+
+  abstract override def value_=(a: A): Unit = {
+    v = null
+    super.value_=(a)
   }
 }
 

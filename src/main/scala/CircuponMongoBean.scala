@@ -6,7 +6,7 @@ trait ValueConverter[A] {
   protected def makeValidatedValue(value: A): A = value
 }
 
-trait CircuponMongoBean extends mongobeans.MongoBean {
+trait CircuponMongoBean extends MongoBean {
 
  /**
   * An AssertedAttribute is an attribute that may have any of several values,
@@ -46,7 +46,7 @@ trait CircuponMongoBean extends mongobeans.MongoBean {
         rule        <- validations.getAs[String](fieldName)
       ) yield rule
 
-    override def value_=(v: A) = 
+    override def value_=(v: A): Unit = 
       throw new RuntimeException("The value of an asserted field may not " +
         "be set directly.  It must be asserted and validated.")
 
