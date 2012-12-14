@@ -72,6 +72,7 @@ trait CircuponMongoBean extends MongoBean {
       else {
         coll.update(beanId, 
           $set("assertions.%s.%s".format(fieldName, rule) -> value))
+        flush
       }
     }
 
