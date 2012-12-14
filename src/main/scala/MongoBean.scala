@@ -139,6 +139,7 @@ trait MongoBean extends MongoBeanFinder {
       }
       else {
         coll.update(beanId, $unset(fieldName))
+        flush
       }
     }
 

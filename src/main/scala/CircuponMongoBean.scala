@@ -78,16 +78,16 @@ trait CircuponMongoBean extends MongoBean {
     def validate(rule: String): Unit = {
       getAssertedValue(rule)
         .map(makeValidatedValue(_))
-        .map(value => {
+        .map(validatedValue => {
           if(inMemory) {
             val validationsContainer = getOrAdd(ensureDbObject, "validations")
             validationsContainer += (fieldName -> rule)
-            ensureDbObject += (fieldName -> value.asInstanceOf[Object])
+            ensureDbObject += (fieldName -> validatedValue.asInstanceOf[Object])
           }
           else {
             coll.update(beanId, 
               $set("validations.%s".format(fieldName) -> rule))
-            coll.update(beanId, $set(fieldName -> value))
+            super.value = validatedValue
           }
         }).orElse(
           throw new RuntimeException(
@@ -103,7 +103,7 @@ trait CircuponMongoBean extends MongoBean {
       }
       else {
         coll.update(beanId, $unset("validations.%s".format(fieldName)))
-        coll.update(beanId, $unset(fieldName))
+        unset
       }
     }
   }
