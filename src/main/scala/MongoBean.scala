@@ -3,6 +3,22 @@ package mongobeans
 import com.mongodb.casbah.Imports._
 import scala.collection.immutable.Set
 
+trait Debug {
+  def value: Option[_]
+
+  def valuePrinter: String = value.toString
+}
+
+trait NoDebug extends Debug {
+  override def valuePrinter: String = 
+    value
+      .map {
+        case l: List[_] => "<list with %s elements>".format(l.size)
+        case a: Any => "..."
+      }
+      .toString
+}
+
 trait MongoBeanFinder {
   protected var dbObj: Option[DBObject]
   protected var inMemory: Boolean
@@ -110,7 +126,7 @@ trait MongoBean extends MongoBeanFinder {
         .map { nameAndAttribute => 
           "%s: %s".format(
             nameAndAttribute._1
-          , nameAndAttribute._2.value
+          , nameAndAttribute._2.valuePrinter
           )
         }
         .mkString(" ")
@@ -122,7 +138,10 @@ trait MongoBean extends MongoBeanFinder {
   * for each attribute that is to be stored in Mongo.  [A] is the type of 
   * the attribute (e.g. String, Date, Long, etc.)
   */
-  class Attribute[A](val fieldName: String) extends ValueRetriever[A] {
+  class Attribute[A](val fieldName: String) 
+  extends ValueRetriever[A] 
+  with Debug
+  {
     attributeMap += fieldName -> this
 
     def value: Option[A] =
