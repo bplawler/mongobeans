@@ -223,6 +223,19 @@ trait MongoBean extends MongoBeanFinder {
         -- blocked.value.getOrElse(Set[A]())
       )
     }
+
+    override def add(a: A) = {
+      if(!blocked.value.getOrElse(Set[A]()).contains(a)) {
+        super.add(a)  
+      }
+    }
+
+    override def remove(a: A) = {
+      if(!locked.value.getOrElse(Set[A]()).contains(a)) {
+        super.remove(a)  
+      }
+    }
+
   }
 
   class ListAttribute[A](fieldName: String) 

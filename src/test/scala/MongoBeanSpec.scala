@@ -69,10 +69,12 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     "allow me to add elements just like a normal Set"                    ! l.e1^
     "allow me to lock certain elements in the Set"                       ! l.e2^
     "and have those elements immediately added to the Set"               ! l.e3^
-    "and not removable from the Set view Set-level assignment"           ! l.e4^
+    "and not removable from the Set via Set-level assignment"            ! l.e4^
+    "and not removable from the Set via remove()"                        ! l.e8^
     "allow me to block certain elements from the Set"                    ! l.e5^
     "and have those elements immediately removed from the Set"           ! l.e6^
-    "and not assignable back into the Set view Set-level assignment"     ! l.e7^
+    "and not assignable back into the Set via Set-level assignment"      ! l.e7^
+    "and not assignable back into the Set via add()"                     ! l.e9^
                                                                            end
     
   object l { // LockableSet stuff.
@@ -94,6 +96,9 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     d2.brands.value = Set("Dove")
     val e4 = d2.brands.value must_== Some(Set("Dove", "Ivory"))
 
+    d2.brands.remove("Dove")
+    val e8 = d2.brands.value must_== Some(Set("Dove", "Ivory"))
+
     d2.brands.blockElement("Cetaphil")
     val e5 = d2.brands.value must_== Some(Set("Dove", "Ivory"))
 
@@ -102,6 +107,9 @@ class MongoBeanSpec extends Specification { def is =            sequential^
 
     d2.brands.value = Set("Dove", "Olay", "Ivory", "Cetaphil")
     val e7 = d2.brands.value must_== Some(Set("Dove", "Ivory"))
+
+    d2.brands.add("Cetaphil")
+    val e9 = d2.brands.value must_== Some(Set("Dove", "Ivory"))
   }
 
   def e1 = {
