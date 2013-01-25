@@ -199,6 +199,32 @@ trait MongoBean extends MongoBeanFinder {
         }
   }
 
+  class LockableSetAttribute[A](fieldName: String) 
+   extends SetAttribute[A](fieldName) {
+    val locked = new SetAttribute[A](List(fieldName, "locked").mkString("_"))
+    val blocked = new SetAttribute[A](List(fieldName, "blocked").mkString("_"))
+
+    def lockElement(elem: A): Unit = {
+      locked.value = locked.value.getOrElse(Set[A]()) ++ Set(elem)
+      blocked.value = blocked.value.getOrElse(Set[A]()) -- Set(elem)
+      add(elem)
+    }
+
+    def blockElement(elem: A): Unit = {
+      blocked.value = blocked.value.getOrElse(Set[A]()) ++ Set(elem)
+      locked.value = locked.value.getOrElse(Set[A]()) -- Set(elem)
+      remove(elem)
+    }
+
+    override def value_= (values: Set[A]) = {
+      super.value_= (
+        values 
+        ++ locked.value.getOrElse(Set[A]()) 
+        -- blocked.value.getOrElse(Set[A]())
+      )
+    }
+  }
+
   class ListAttribute[A](fieldName: String) 
    extends Attribute[List[A]](fieldName) {
     def add(a: A) = value = value.getOrElse(List()) :+ a

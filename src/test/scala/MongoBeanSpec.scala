@@ -64,8 +64,46 @@ class MongoBeanSpec extends Specification { def is =            sequential^
   "An attribute may also take the form of a List, which should"           ^
     "allow me to add elements to the list and get them back in order"     ! e32^
     "allow me to save the list and retrieve it later"                     ! e33^
+                                                                          p^
+  "A LockableSet is a special type of SetAttribute which should"          ^
+    "allow me to add elements just like a normal Set"                    ! l.e1^
+    "allow me to lock certain elements in the Set"                       ! l.e2^
+    "and have those elements immediately added to the Set"               ! l.e3^
+    "and not removable from the Set view Set-level assignment"           ! l.e4^
+    "allow me to block certain elements from the Set"                    ! l.e5^
+    "and have those elements immediately removed from the Set"           ! l.e6^
+    "and not assignable back into the Set view Set-level assignment"     ! l.e7^
                                                                            end
     
+  object l { // LockableSet stuff.
+    val d1 = new Deal
+    d1.brands.value = Set("Dove", "Olay")
+    d1.save
+
+    val d2 = new Deal
+    d2._id.value = d1._id.value.get
+    d2.load
+    val e1 = d2.brands.value must_== Some(Set("Dove", "Olay"))
+
+    d2.brands.lockElement("Dove")
+    val e2 = d2.brands.value must_== Some(Set("Dove", "Olay"))
+
+    d2.brands.lockElement("Ivory")
+    val e3 = d2.brands.value must_== Some(Set("Dove", "Olay", "Ivory"))
+
+    d2.brands.value = Set("Dove")
+    val e4 = d2.brands.value must_== Some(Set("Dove", "Ivory"))
+
+    d2.brands.blockElement("Cetaphil")
+    val e5 = d2.brands.value must_== Some(Set("Dove", "Ivory"))
+
+    d2.brands.blockElement("Olay")
+    val e6 = d2.brands.value must_== Some(Set("Dove", "Ivory"))
+
+    d2.brands.value = Set("Dove", "Olay", "Ivory", "Cetaphil")
+    val e7 = d2.brands.value must_== Some(Set("Dove", "Ivory"))
+  }
+
   def e1 = {
     val d = defaultDeal
     d.source.value must_== Some("TestSource")

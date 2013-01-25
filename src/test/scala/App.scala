@@ -18,7 +18,7 @@ class Deal extends CircuponMongoBean {
   val coll = Config.deals
 
   val _id = new Attribute[org.bson.types.ObjectId]("_id")
-  val brands = new SetAttribute[String]("brand")
+  val brands = new LockableSetAttribute[String]("brand")
   val caps = new AssertedAttribute[String]("caps") with Capitalize
   val href = new Attribute[String]("href") 
   val number = new Attribute[Long]("number")
