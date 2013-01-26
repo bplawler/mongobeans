@@ -75,8 +75,38 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     "and have those elements immediately removed from the Set"           ! l.e6^
     "and not assignable back into the Set via Set-level assignment"      ! l.e7^
     "and not assignable back into the Set via add()"                     ! l.e9^
+                                                                          p^
+  "A MapAttribute is another type of collection which should"             ^
+    "allow me to put and get elements on an in-memory document"          ! m.e1^
+    "allow me to put and get elements on a persisted document"           ! m.e2^
+    "allow me to remove elements on an in-memory document"               ! m.e3^
+    "allow me to remove elements on a persisted document"                ! m.e4^
+    "allow me to access the Map before anything has been added"          ! m.e5^
                                                                            end
     
+  object m { // MapAttribute stuff.
+    val s1 = new Survey
+    val e5 = s1.answers.get("A") must_== None
+
+    s1.answers.put("A", "Hell yes!")
+    s1.answers.put("B", "Hell no!")
+    val e1 = s1.answers.get("A") must_== Some("Hell yes!")
+
+    s1.answers.remove("B")
+    val e3 = s1.answers.get("B") must_== None
+
+    s1.save
+    val s2 = new Survey
+    s2._id.value = s1._id.value.get
+    s2.load
+
+    s2.answers.put("C", "Well, maybe")
+    val e2 = s2.answers.get("A") must_== Some("Hell yes!")
+
+    s2.answers.remove("C")
+    val e4 = s2.answers.get("C") must_== None
+  }
+
   object l { // LockableSet stuff.
     val d1 = new Deal
     d1.brands.value = Set("Dove", "Olay")

@@ -29,3 +29,18 @@ class Deal extends CircuponMongoBean {
   val zipCodes = new Attribute[Set[String]]("zipCode")
   val history = new ListAttribute[String]("history")
 }
+
+class Survey extends MongoBean {
+  val coll = Config.survey
+
+  val _id = new Attribute[org.bson.types.ObjectId]("_id")
+  val question = new Attribute[String]("question")
+  val answers = new MapAttribute[String]("answers")
+}
+
+/*
+class Answer extends MongoBean {
+  val answer = new Attribute[String]("answer")
+  val email = new SetAttribute[String]("emails")
+}
+*/

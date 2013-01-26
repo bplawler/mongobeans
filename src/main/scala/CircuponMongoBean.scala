@@ -55,14 +55,6 @@ trait CircuponMongoBean extends MongoBean {
     * way and thus have implications on application concurrency.
     */
 
-    private def getOrAdd(o: DBObject, elementName: String): DBObject = 
-      o.getAs[DBObject](elementName)
-        .getOrElse { 
-          val result = new BasicDBObject
-          o += (elementName -> result)
-          result
-        } 
-
     def assertValue(rule: String, value: A): Unit = {
       if(inMemory) {
         val assertionContainer = getOrAdd(ensureDbObject, "assertions")

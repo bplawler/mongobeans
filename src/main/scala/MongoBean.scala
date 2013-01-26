@@ -171,6 +171,14 @@ trait MongoBean extends MongoBeanFinder {
         flush
       }
     }
+
+    protected def getOrAdd(o: DBObject, elementName: String): DBObject = 
+      o.getAs[DBObject](elementName)
+        .getOrElse { 
+          val result = new BasicDBObject
+          o += (elementName -> result)
+          result
+        } 
   }
 
  /**
@@ -247,6 +255,40 @@ trait MongoBean extends MongoBeanFinder {
         .map {
           case l: BasicDBList => l.toList.asInstanceOf[List[A]]
           case c: List[_] => c.asInstanceOf[List[A]]
+        }
+  }
+
+  class MapAttribute[A](fieldName: String) 
+   extends Attribute[Map[String, A]](fieldName) {
+    def get(k: String): Option[A] = value.getOrElse(Map()).get(k)
+
+    def put(key: String, value: A): Unit = {
+      if(inMemory) {
+        getOrAdd(ensureDbObject, fieldName) += 
+          (key -> value.asInstanceOf[AnyRef])
+      }
+      else {
+        coll.update(beanId, 
+          $set("%s.%s".format(fieldName, key) -> value))
+        flush
+      }
+    }
+
+    def remove(key: String): Unit = {
+      if(inMemory) {
+        getOrAdd(ensureDbObject, fieldName) -= key
+      }
+      else {
+        coll.update(beanId, $unset("%s.%s".format(fieldName, key)))
+        flush
+      }
+    }
+    
+    override def value: Option[Map[String, A]] =
+      Option(ensureDbObject.get(fieldName))
+        .map {
+          case m: DBObject => Map[String, A]() ++ m.mapValues(_.asInstanceOf[A])
+          case c: Map[_, _] => c.asInstanceOf[Map[String, A]]
         }
   }
 }
