@@ -16,3 +16,7 @@ libraryDependencies ++= Seq (
   , "org.specs2" %% "specs2" % "1.5" % "test"
   , "org.specs2" %% "specs2-scalaz-core" % "5.1-SNAPSHOT" % "test"
 )
+
+scalacOptions in ThisBuild += "-deprecation"
+
+scalacOptions in ThisBuild += "-unchecked"

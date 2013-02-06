@@ -260,7 +260,12 @@ trait MongoBean extends MongoBeanFinder {
 
   class MapAttribute[A](fieldName: String) 
    extends Attribute[Map[String, A]](fieldName) {
-    def get(k: String): Option[A] = value.getOrElse(Map()).get(k)
+    def get(k: String): Option[A] = 
+      value.getOrElse(Map()).get(k).map { value => value match {
+          case l: BasicDBList => l.toSet.asInstanceOf[A]
+          case _ => value
+        }
+      }
 
     def put(key: String, value: A): Unit = {
       if(inMemory) {
