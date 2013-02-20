@@ -85,6 +85,7 @@ trait MongoBean extends MongoBeanFinder {
   */
   def load = {
     inMemory = false
+    flush
   }
 
  /**
