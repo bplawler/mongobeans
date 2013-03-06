@@ -225,6 +225,17 @@ trait MongoBean extends MongoBeanFinder {
       remove(elem)
     }
 
+    def unblockElement(elem: A): Unit = {
+      blocked.value.foreach { oldBlocked => {
+        blocked.value = oldBlocked - elem
+        add(elem)  
+      }}
+    }
+
+    def getBlockedItems: Option[Set[A]] = {
+      blocked.value  
+    }
+
     override def value_= (values: Set[A]) = {
       super.value_= (
         values 
@@ -244,7 +255,6 @@ trait MongoBean extends MongoBeanFinder {
         super.remove(a)  
       }
     }
-
   }
 
   class ListAttribute[A](fieldName: String) 
