@@ -3,6 +3,8 @@ package mongobeans
 import com.mongodb.casbah.Imports._
 import scala.collection.immutable.Set
 
+class AlreadyLoadedException(msg: String) extends RuntimeException(msg)
+
 trait Debug {
   def value: Option[_]
 
@@ -94,8 +96,10 @@ trait MongoBean extends MongoBeanFinder {
   */
   def save = {
     if(!inMemory)
-      throw new RuntimeException("Do not call save() on objects that have " +
-        "been loaded.  Others may be attempting to change the same object.")
+      throw new AlreadyLoadedException(
+        "Do not call save() on objects that " +
+        "have been loaded.  Others may be attempting to change the " +
+        "same object.")
     dbObj.foreach(obj => { 
       coll.save(obj, WriteConcern.Safe) 
       inMemory = false
