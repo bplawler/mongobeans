@@ -1,6 +1,6 @@
 name := "mongobeans"
 
-version := "0.3.6"
+version := "0.3.7"
 
 scalaVersion := "2.8.1"
 
