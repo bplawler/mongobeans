@@ -76,7 +76,8 @@ trait MongoBean extends MongoBeanFinder {
 
   protected var inMemory: Boolean = true
 
-  protected var attributeMap = Map[String, Attribute[_]]()
+  protected var attributeMap = 
+    scala.collection.mutable.Map[String, Attribute[_]]()
 
   def getAttribute(attrName: String): Option[Attribute[_]] = 
     attributeMap.get(attrName)
@@ -345,7 +346,7 @@ trait CachedAttribute[A] extends ValueRetriever[A] {
  * of the database.
  */
 trait StringEnum[A] {
-  private var mappings = Map[String, A]()
+  private var mappings = scala.collection.mutable.Map[String, A]()
   def apply(s: String): Option[A] = mappings.get(s)
   def unapply(a: A): String = a.toString
   def addMapping(i: StringEnumItem) =

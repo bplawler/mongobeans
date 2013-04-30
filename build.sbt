@@ -2,7 +2,7 @@ name := "mongobeans"
 
 version := "0.3.7"
 
-scalaVersion := "2.8.1"
+scalaVersion := "2.9.1"
 
 crossPaths in ThisBuild := false
 
@@ -12,9 +12,8 @@ resolvers ++= Seq(
   , "releases"  at "http://oss.sonatype.org/content/repositories/releases")
 
 libraryDependencies ++= Seq (
-    "com.mongodb.casbah" %% "casbah" % "2.1.5.0"
-  , "org.specs2" %% "specs2" % "1.5" % "test"
-  , "org.specs2" %% "specs2-scalaz-core" % "5.1-SNAPSHOT" % "test"
+    "com.mongodb.casbah" %% "casbah" % "2.1.5-1"
+  , "org.specs2" %% "specs2" % "1.12.4" % "test"
 )
 
 scalacOptions in ThisBuild += "-deprecation"
