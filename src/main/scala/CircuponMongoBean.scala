@@ -63,7 +63,7 @@ trait CircuponMongoBean extends MongoBean {
       }
       else {
         coll.update(beanId, 
-          $set("assertions.%s.%s".format(fieldName, rule) -> value))
+          $set(Seq("assertions.%s.%s".format(fieldName, rule) -> value)))
         flush
       }
     }
@@ -79,7 +79,7 @@ trait CircuponMongoBean extends MongoBean {
           }
           else {
             coll.update(beanId, 
-              $set("validations.%s".format(fieldName) -> rule))
+              $set(Seq("validations.%s".format(fieldName) -> rule)))
             super.value = validatedValue
           }
         }).orElse(
@@ -95,7 +95,7 @@ trait CircuponMongoBean extends MongoBean {
         ensureDbObject -= fieldName 
       }
       else {
-        coll.update(beanId, $unset("validations.%s".format(fieldName)))
+        coll.update(beanId, $unset(Seq("validations.%s".format(fieldName))))
         unset
       }
     }
