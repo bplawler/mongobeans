@@ -14,7 +14,7 @@ object RetailerEnum extends StringEnum[Retailer] {
   RiteAid   ; case object RiteAid extends Retailer
 }
 
-class Deal extends CircuponMongoBean {
+class Deal extends CircuponMongoBean with SecuredToOwner {
   val coll = Config.deals
 
   val _id = new Attribute[org.bson.types.ObjectId]("_id")
@@ -28,6 +28,12 @@ class Deal extends CircuponMongoBean {
   val validTo = new AssertedAttribute[java.util.Date]("validTo")
   val zipCodes = new Attribute[Set[String]]("zipCode")
   val history = new ListAttribute[String]("history")
+
+  object SetSource extends ApiCall[String] with OwnerCheck {
+    def execute(s: String) = {
+      source.value = s
+    }
+  }
 }
 
 class Survey extends MongoBean {
@@ -37,6 +43,8 @@ class Survey extends MongoBean {
   val question = new Attribute[String]("question")
   val answers = new MapAttribute[String]("answers")
 }
+
+class AppUser(val id: String) extends User
 
 /*
 class Answer extends MongoBean {

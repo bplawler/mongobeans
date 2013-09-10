@@ -82,8 +82,28 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     "allow me to remove elements on an in-memory document"               ! m.e3^
     "allow me to remove elements on a persisted document"                ! m.e4^
     "allow me to access the Map before anything has been added"          ! m.e5^
+                                                                          p^
+  "A bean that extends security code should"                              ^
+    "not allow users without permission to execute secured actions"      ! s.e1^
+    "allow permitted users to take secured actions"                      ! s.e2^
                                                                            end
     
+  object s { // Security stuff.
+    implicit val appUser = new AppUser("1")
+
+    def e1 = {
+      val d = defaultDeal
+      d.SetSource("test")
+    } must throwA[PermissionDenied]
+
+    def e2 = {
+      val d = defaultDeal
+      d.ownerId.value = "1"
+      d.SetSource("test")
+      d.source.value must_== Some("test")
+    }
+  }
+
   object m { // MapAttribute stuff.
     val s1 = new Survey
     val e5 = s1.answers.get("A") must_== None
@@ -154,6 +174,7 @@ class MongoBeanSpec extends Specification { def is =            sequential^
 
   def e3 = {
     val d = defaultDeal
+    d.href.value = "e3.d"
     d.save
     Config.deals.count(MongoDBObject()) must_== 1
   }
@@ -165,6 +186,7 @@ class MongoBeanSpec extends Specification { def is =            sequential^
   
   def e5 = {
     val d = defaultDeal
+    d.href.value = "e5.d"
     d.save
     d._id.value.isDefined
   }
@@ -214,20 +236,21 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     val d1 = new Deal
     d1.title.assertValue("rule 1", "title 1")
     d1.title.assertValue("rule 2", "title 2")
+    d1.href.value = "e10.d"
     d1.save
 
     List(
       Config.deals.findOne(
         MongoDBObject("_id" -> d1._id.value.get) ++ 
-        "assertions.title.rule 1" $exists true
+        ("assertions.title.rule 1" $exists true)
       ).isDefined 
     , Config.deals.findOne(
         MongoDBObject("_id" -> d1._id.value.get) ++ 
-        "assertions.title.rule 2" $exists true
+        ("assertions.title.rule 2" $exists true)
       ).isDefined
     , Config.deals.findOne(
         MongoDBObject("_id" -> d1._id.value.get) ++ 
-        "assertions.title.somethingElse" $exists false
+        ("assertions.title.somethingElse" $exists false)
       ).isDefined 
     ).foldLeft(true)(_ && _)
   }
@@ -287,6 +310,7 @@ class MongoBeanSpec extends Specification { def is =            sequential^
     val d1 = new Deal
     d1.title.assertValue("rule 1", "title 1")
     d1.title.assertValue("rule 2", "title 2")
+    d1.href.value = "e15.d1"
     d1.save
 
     d1.title.validate("rule 2")
