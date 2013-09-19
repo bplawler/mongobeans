@@ -359,4 +359,11 @@ trait StringEnum[A] {
  */
 class StringEnumItem(enum: StringEnum[_]) {
   enum.addMapping(this);
+
+  override def equals(a: Any) = {
+    a match {
+      case that: StringEnumItem => this.toString == that.toString
+      case _ => false
+    }
+  }
 }
