@@ -4,6 +4,7 @@ import com.mongodb.casbah.Imports._
 import scala.collection.immutable.Set
 
 class AlreadyLoadedException(msg: String) extends RuntimeException(msg)
+class UnknownBeanException(msg: String) extends RuntimeException(msg)
 
 trait Debug {
   def value: Option[_]
@@ -86,9 +87,13 @@ trait MongoBean extends MongoBeanFinder {
   * Public method that will use the current value of the _id attribute to load
   * a backing document behind this bean.
   */
-  def load = {
-    inMemory = false
-    flush
+  def load: Option[Unit] = {
+    coll
+      .findOne(beanId)
+      .map { doc => {
+        inMemory = false
+        flush
+      }}
   }
 
  /**
