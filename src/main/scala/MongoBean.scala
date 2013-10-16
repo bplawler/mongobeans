@@ -65,6 +65,18 @@ trait MongoBean extends MongoBeanFinder {
   */
   val _id: Attribute[_]
 
+  override def equals(o: Any) = {
+    o match {
+      case that:MongoBean => 
+        this
+          ._id.value
+          .map { _.toString }
+          .map { id => that._id.value.map(_.toString == id).getOrElse(false) }
+          .getOrElse(false)
+      case _ => false
+    }
+  }
+
   protected def beanId: MongoDBObject = 
     _id.value.map(id => MongoDBObject("_id" -> id))
       .getOrElse(throw new RuntimeException("Attempting to create a " +
