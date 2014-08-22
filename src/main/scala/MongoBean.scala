@@ -124,6 +124,11 @@ trait MongoBean extends MongoBeanFinder {
     })
   }
 
+  def remove = {
+    if(!inMemory)
+      coll.remove(beanId, WriteConcern.Safe)
+  }
+
   protected def ensureDbObject: DBObject = {
     if(!inMemory) {
       // Can't use the _id.value here - that would cause an infinite 
