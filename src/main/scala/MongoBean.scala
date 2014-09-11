@@ -223,9 +223,23 @@ trait MongoBean extends MongoBeanFinder {
 
   class SetAttribute[A](fieldName: String) 
    extends Attribute[Set[A]](fieldName) {
-    def add(a: A) = value = value.getOrElse(Set()) + a
+    def add(a: A) = {
+      if(!inMemory) {
+        coll.update(beanId, $addToSet(fieldName -> a))
+        flush
+      } else {
+        value = value.getOrElse(Set()) + a
+      }
+    }
 
-    def remove(a: A) = value = value.getOrElse(Set()) - a
+    def remove(a: A) = {
+      if(!inMemory) {
+        coll.update(beanId, $pull(fieldName -> a))
+        flush
+      } else {
+        value = value.getOrElse(Set()) - a
+      }
+    }
 
     override def value: Option[Set[A]] =
       Option(ensureDbObject.get(fieldName))
