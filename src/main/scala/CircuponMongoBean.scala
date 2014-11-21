@@ -36,6 +36,20 @@ trait CircuponMongoBean extends MongoBean {
         field       <- assertions.getAs[DBObject](fieldName)
       ) yield field.mapValues { _.asInstanceOf[A] }
 
+    /**
+     * If a given field has only one asserted value, then this 
+     * method will return Some(that value).  If there are no 
+     * assertions or there is more than one, then None is returned.
+     */
+    def getLoneAssertedValue: Option[A] = {
+      getAssertedValues.flatMap { valMap => {
+        valMap.size match {
+          case 1 => Some(valMap.values.head)
+          case _ => None
+        }
+      }}
+    }
+
     def isAsserted: Boolean = getAssertedValues.isDefined
 
     def isValidated: Boolean = value.isDefined
