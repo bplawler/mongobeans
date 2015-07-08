@@ -65,6 +65,9 @@ trait MongoBean extends MongoBeanFinder {
   */
   val _id: Attribute[_]
 
+  override def hashCode: Int = 
+    _id.value.map(_.toString.hashCode).getOrElse(hashCode)
+
   override def equals(o: Any) = {
     o match {
       case that:MongoBean => 
