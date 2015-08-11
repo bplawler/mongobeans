@@ -224,6 +224,30 @@ trait MongoBean extends MongoBeanFinder {
     override def value_=(a: A) = setValue(enum.unapply(a))
   }
 
+  abstract class EncryptedAttribute(fieldName: String) 
+   extends Attribute[String](fieldName) 
+   with EncryptedValueRetriever {
+    private val isEncrypted = 
+      new Attribute[Boolean](s"encrypted_${fieldName}")
+
+    override def value: Option[String] =
+      Option(ensureDbObject.get(fieldName))
+        .collect {
+          case s:String => {
+            var result = s
+            if(isEncrypted.value == true) {
+              result = decrypt(s)
+            }
+            result
+          }
+        }
+
+    override def value_=(a: String): Unit = {
+      setValue(encrypt(a))
+      isEncrypted.value = true
+    }
+  }
+
   class SetAttribute[A](fieldName: String) 
    extends Attribute[Set[A]](fieldName) {
     def add(a: A) = {
@@ -356,6 +380,11 @@ trait MongoBean extends MongoBeanFinder {
 trait ValueRetriever[A] {
   def value         : Option[A]
   def value_=(a: A) : Unit
+}
+
+trait EncryptedValueRetriever {
+  def encrypt(plaintext: String): String
+  def decrypt(cipher: String): String
 }
 
 /**
