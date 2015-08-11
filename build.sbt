@@ -11,7 +11,7 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq (
-    "org.mongodb" % "casbah_2.10" % "2.5.0"
+    "org.mongodb" %% "casbah" % "2.8.1"
   , "org.specs2" % "specs2_2.10" % "1.14" % "test"
 )
 

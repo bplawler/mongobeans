@@ -188,7 +188,7 @@ trait MongoBean extends MongoBeanFinder {
         ensureDbObject -= fieldName
       }
       else {
-        coll.update(beanId, $unset(Seq(fieldName)))
+        coll.update(beanId, $unset(fieldName))
         flush
       }
     }
@@ -198,7 +198,7 @@ trait MongoBean extends MongoBeanFinder {
         ensureDbObject += (fieldName -> a)
       }
       else {
-        coll.update(beanId, $set(Seq(fieldName -> a)))
+        coll.update(beanId, $set(fieldName -> a))
         flush
       }
     }
@@ -353,7 +353,7 @@ trait MongoBean extends MongoBeanFinder {
       }
       else {
         coll.update(beanId, 
-          $set(Seq("%s.%s".format(fieldName, key) -> value)))
+          $set("%s.%s".format(fieldName, key) -> value))
         flush
       }
     }
@@ -363,7 +363,7 @@ trait MongoBean extends MongoBeanFinder {
         getOrAdd(ensureDbObject, fieldName) -= key
       }
       else {
-        coll.update(beanId, $unset(Seq("%s.%s".format(fieldName, key))))
+        coll.update(beanId, $unset("%s.%s".format(fieldName, key)))
         flush
       }
     }
