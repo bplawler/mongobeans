@@ -235,9 +235,8 @@ trait MongoBean extends MongoBeanFinder {
         .collect {
           case s:String => {
             var result = s
-            if(isEncrypted.value == true) {
-              result = decrypt(s)
-            }
+            isEncrypted.value.filter(_ == true)
+              .foreach { encrypted => result = decrypt(s) }
             result
           }
         }
