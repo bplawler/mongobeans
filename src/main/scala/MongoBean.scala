@@ -242,8 +242,12 @@ trait MongoBean extends MongoBeanFinder {
         }
 
     override def value_=(a: String): Unit = {
-      setValue(encrypt(a))
-      isEncrypted.value = true
+      val encrypted = encrypt(a)
+      setValue(encrypted)
+      // allow for the possibility that the encryption routine did not
+      // actually encrypt the data.  If not, then don't decrypt on
+      // retrieval (by setting isEncrypted to false).
+      isEncrypted.value = (a != encrypted)
     }
   }
 
