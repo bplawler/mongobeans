@@ -66,7 +66,13 @@ trait MongoBean extends MongoBeanFinder {
   val _id: Attribute[_]
 
   override def hashCode: Int = 
-    _id.value.map(_.toString.hashCode).getOrElse(hashCode)
+    _id.value
+      .map(_.toString.hashCode)
+      .getOrElse { 
+        throw new UnsupportedOperationException("Can't get the hashcode if I don't have an _id setting.")
+      }
+
+  override def toString = ensureDbObject.toString
 
   override def equals(o: Any) = {
     o match {
@@ -149,20 +155,6 @@ trait MongoBean extends MongoBeanFinder {
       }
     }
   }
-
-  override def toString = 
-    List(
-      super.toString
-    , attributeMap
-        .map { nameAndAttribute => 
-          "%s: %s".format(
-            nameAndAttribute._1
-          , nameAndAttribute._2.valuePrinter
-          )
-        }
-        .mkString(" ")
-    )
-    .mkString("\n")
 
  /**
   * Instances of the Attribute class are instantiated by the implementing bean
