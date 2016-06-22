@@ -121,7 +121,7 @@ trait MongoBean extends MongoBeanFinder {
   * Public method for saving the document to the collection after making
   * changes to it in the app.
   */
-  def save = {
+  def save(): Unit = {
     if(!inMemory)
       throw new AlreadyLoadedException(
         "Do not call save() on objects that " +
